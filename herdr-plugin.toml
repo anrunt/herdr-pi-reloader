@@ -1,0 +1,11 @@
+id = "herdr-pi-reloader.pi-reloader"
+name = "Herdr Pi Reloader"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "reload"
+title = "Reload all Pi panes"
+contexts = ["workspace"]
+command = ["cargo", "run", "--quiet", "--", "reload"]
