@@ -41,6 +41,9 @@ fn main() {
                             for (index, agent) in agents.iter().enumerate() {
                                 println!("Agent nr: {}", index);
 
+                                // unwrap-or will probably get deleted because we need this values
+                                // and we want to throw error if some of the are missing instead of
+                                // replacing missing value with <missing>
                                 let pane_id = agent.get("pane_id").and_then(|v| v.as_str()).unwrap_or("<missing>");
                                 println!("Pane_id: {}", pane_id);
 
