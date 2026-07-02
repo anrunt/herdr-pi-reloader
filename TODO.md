@@ -1,0 +1,3 @@
+-[] Break main.rs into multiple functions
+-[] Add resetting pi (closing and open back)
+-[] Resetting other harnesses?
