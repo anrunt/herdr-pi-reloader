@@ -36,7 +36,7 @@ fn main() {
 
     let herdr_path = match herdr_path_result {
         Ok(path) => path,
-        Err(_error) => String::from("herdr"), // If path invalid and herdr not working then what?
+        Err(_error) => String::from("herdr"),
     };
 
     match Command::new(&herdr_path).args(["agent", "list"]).output() {
