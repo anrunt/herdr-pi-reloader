@@ -1,6 +1,7 @@
 use std::{env, process::Command};
 
 use serde_json::Value;
+use serde::{Deserialize};
 
 #[derive(Debug)]
 struct ReloadSummary {
@@ -9,6 +10,18 @@ struct ReloadSummary {
     skipped_unsafe_status: usize,
     skipped_invalid_agent_data: usize,
     failed: usize
+}
+
+#[derive(Deserialize)]
+struct AgentInfo {
+    agent: String,
+    agent_status: String,
+    pane_id: String
+}
+
+#[derive(Deserialize)]
+struct AgentListResult {
+    agents: Vec<AgentInfo>
 }
 
 fn reload_pane(herdr_path: &str, pane_id: &str) -> bool {
