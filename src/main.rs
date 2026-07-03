@@ -2,19 +2,31 @@ use std::{env, process::Command};
 
 use serde_json::Value;
 
-fn reload_pane(herdr_path: &str, pane_id: &str) {
+#[derive(Debug)]
+struct ReloadSummary {
+    reloaded: usize,
+    skipped_non_pi: usize,
+    skipped_unsafe_status: usize,
+    skipped_invalid_agent_data: usize,
+    failed: usize
+}
+
+fn reload_pane(herdr_path: &str, pane_id: &str) -> bool {
     match Command::new(herdr_path).args(["pane", "run", pane_id, "/reload"]).output() {
         Ok(output) => {
             if output.status.success() {
                 println!("Successfully reloaded pane: {}", pane_id);
+                return true;
             } else {
                 let std_error = String::from_utf8_lossy(&output.stderr);
                 let std_out = String::from_utf8_lossy(&output.stdout);
                 println!("Pane run exited with error for pane: {} - status: {} - error: {} - output: {}", pane_id, output.status, std_error, std_out);
+                return false;
             }
         },
         Err(error) => {
             println!("Error occurred when reloading pane: {} - error: {}", pane_id, error);
+            return false;
         }
     }
 }
@@ -23,7 +35,7 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
-        println!("Usage: cargo run reload");
+        println!("Usage: cargo run -- reload");
         return;
     }
 
@@ -50,6 +62,14 @@ fn main() {
                 match json_result {
                     Ok(value) => {
                         if let Some(agents) = value["result"]["agents"].as_array() {
+                            let mut reload_summary = ReloadSummary {
+                                reloaded: 0,
+                                skipped_non_pi: 0,
+                                skipped_unsafe_status: 0,
+                                skipped_invalid_agent_data: 0,
+                                failed: 0
+                            };
+
                             for (index, agent) in agents.iter().enumerate() {
                                 println!("Agent nr: {}", index);
 
@@ -61,14 +81,24 @@ fn main() {
                                     (pane_id_option, agent_name_option, agent_status_option)
                                 {
                                     if agent_name != "pi" {
+                                        reload_summary.skipped_non_pi += 1;
                                         println!("Not pi - skipping");
                                         continue;
                                     }
 
                                     if agent_status == "done" || agent_status == "idle" {
                                         println!("Reloading pi on pane: {}", pane_id);
-                                        reload_pane(&herdr_path, pane_id);
+
+                                        let reload_pane_status = reload_pane(&herdr_path, pane_id);
+
+                                        if reload_pane_status {
+                                            reload_summary.reloaded += 1;
+                                        } else {
+                                            reload_summary.failed += 1;
+                                        }
+
                                     } else {
+                                        reload_summary.skipped_unsafe_status += 1;
                                         println!("Agent on pane: {} is {} - skipping", pane_id, agent_status);
                                         continue;
                                     }
@@ -85,8 +115,11 @@ fn main() {
                                             println!("Missing {} value!", field_name);
                                         }    
                                     }
+
+                                    reload_summary.skipped_invalid_agent_data += 1;
                                 }
                             }
+                            println!("{:#?}", reload_summary);
                         } else {
                             println!("Error - agents not array");
                         }
