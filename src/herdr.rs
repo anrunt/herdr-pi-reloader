@@ -27,6 +27,10 @@ struct AgentListResponse {
     result: AgentListResult
 }
 
+pub async fn run_in_pane(herdr_path: &str, pane_id: &str, command: &str) -> Result<(), String> {
+
+}
+
 pub fn reload_pane(herdr_path: &str, pane_id: &str) -> bool {
     match Command::new(herdr_path).args(["pane", "run", pane_id, "/reload"]).output() {
         Ok(output) => {
