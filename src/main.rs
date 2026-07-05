@@ -4,7 +4,8 @@ use std::{env};
 
 use crate::herdr::{get_agent_list, reload_all_pi};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
