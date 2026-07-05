@@ -28,6 +28,25 @@ struct AgentListResponse {
 }
 
 pub async fn run_in_pane(herdr_path: &str, pane_id: &str, command: &str) -> Result<(), String> {
+    match tokio::process::Command::new(herdr_path).args(["pane", "run", pane_id, command]).output().await {
+        Ok(output) => {
+            if output.status.success() {
+                println!("Successfully executed command: {command} on pane_id: {pane_id}");
+                return Ok(());
+            } else {
+                let std_error = String::from_utf8_lossy(&output.stderr);
+                let std_out = String::from_utf8_lossy(&output.stdout);
+
+                let error_message = format!("std_err: {std_error} - std_out: {std_out}");
+                let error_str = format!("Error in executing command: {}: on pane: {} - error: {}", command, pane_id, error_message);
+                return Err(error_str);
+            }
+        },
+        Err(error) => {
+            let error_str = format!("Error in executing command: {}: on pane: {} - error: {}", command, pane_id, error);
+            return Err(error_str);
+        }
+    }
 
 }
 
