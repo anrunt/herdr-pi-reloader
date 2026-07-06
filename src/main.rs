@@ -2,7 +2,7 @@ mod herdr;
 
 use std::{env};
 
-use crate::herdr::{get_agent_list, reload_all_pi};
+use crate::herdr::{get_agent_list, get_reset_candidates, reload_all_pi};
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
         Err(_error) => String::from("herdr"),
     };
 
-    let agents = match get_agent_list(&herdr_path) {
+    let agents = match get_agent_list(&herdr_path).await {
         Ok(value) => value,
         Err(error) => {
             println!("{}", error);
@@ -33,5 +33,10 @@ async fn main() {
         }
     };
 
-    reload_all_pi(&herdr_path, &agents);
+//    reload_all_pi(&herdr_path, &agents).await;
+
+    let (candidates, summary) = get_reset_candidates(&agents);
+
+    println!("Candidates: {:#?}", candidates);
+    println!("Summary: {:#?}", summary);
 }

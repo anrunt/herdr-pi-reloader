@@ -1,8 +1,12 @@
+use std::time::Duration;
+
 use serde::{Deserialize};
-use std::{process::Command};
+use tokio::time::timeout;
+
+use crate::herdr;
 
 #[derive(Debug)]
-struct ReloadSummary {
+pub struct ReloadSummary {
     reloaded: usize,
     skipped_non_pi: usize,
     skipped_unsafe_status: usize,
@@ -10,11 +14,34 @@ struct ReloadSummary {
     failed: usize
 }
 
+#[derive(Debug)]
+pub struct ResetCandidatesSummary {
+   candidates: usize,
+   skipped_non_pi: usize,
+   skipped_unsafe_status: usize,
+   skipped_invalid_agent_data: usize,
+   skipped_missing_session: usize,
+   skipped_invalid_session: usize,
+}
+
+#[derive(Deserialize)]
+struct AgentSession {
+    agent: String,
+    kind: String,
+    value: String
+}
+
 #[derive(Deserialize)]
 pub struct AgentInfo {
     agent: String,
     agent_status: String,
-    pane_id: String
+    pane_id: String,
+    agent_session: Option<AgentSession>
+}
+#[derive(Debug)]
+pub struct ResetCandidate {
+    pane_id: String,
+    session_path: String
 }
 
 #[derive(Deserialize)]
@@ -50,28 +77,8 @@ pub async fn run_in_pane(herdr_path: &str, pane_id: &str, command: &str) -> Resu
 
 }
 
-pub fn reload_pane(herdr_path: &str, pane_id: &str) -> bool {
-    match Command::new(herdr_path).args(["pane", "run", pane_id, "/reload"]).output() {
-        Ok(output) => {
-            if output.status.success() {
-                println!("Successfully reloaded pane: {}", pane_id);
-                return true;
-            } else {
-                let std_error = String::from_utf8_lossy(&output.stderr);
-                let std_out = String::from_utf8_lossy(&output.stdout);
-                println!("Pane run exited with error for pane: {} - status: {} - error: {} - output: {}", pane_id, output.status, std_error, std_out);
-                return false;
-            }
-        },
-        Err(error) => {
-            println!("Error occurred when reloading pane: {} - error: {}", pane_id, error);
-            return false;
-        }
-    }
-}
-
-pub fn get_agent_list(herdr_path: &str) -> Result<Vec<AgentInfo>, String>  {
-    match Command::new(herdr_path).args(["agent", "list"]).output() {
+pub async fn get_agent_list(herdr_path: &str) -> Result<Vec<AgentInfo>, String> {
+    match tokio::process::Command::new(herdr_path).args(["agent", "list"]).output().await {
         Ok(output) => {
             if output.status.success() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
@@ -104,7 +111,98 @@ pub fn get_agent_list(herdr_path: &str) -> Result<Vec<AgentInfo>, String>  {
     }
 }
 
-pub fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
+pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, ResetCandidatesSummary) {
+    let mut reset_candidates_summary = ResetCandidatesSummary {
+        candidates: 0,
+        skipped_non_pi: 0,
+        skipped_unsafe_status: 0,
+        skipped_invalid_agent_data: 0,
+        skipped_missing_session: 0,
+        skipped_invalid_session: 0
+    };
+
+    let mut reset_candidates: Vec<ResetCandidate> = Vec::new();
+
+    for value in agent_list {
+        if value.agent.is_empty() {
+            reset_candidates_summary.skipped_invalid_agent_data += 1;
+            continue;
+        }
+
+        if value.pane_id.is_empty() {
+            reset_candidates_summary.skipped_invalid_agent_data += 1;
+            continue;
+        }
+
+        if value.agent_status.is_empty() {
+            reset_candidates_summary.skipped_invalid_agent_data += 1;
+            continue;
+        }
+
+        if value.agent != "pi" {
+            reset_candidates_summary.skipped_non_pi += 1;
+            continue;
+        }
+
+        if value.agent_status != "done" && value.agent_status != "idle" {
+            reset_candidates_summary.skipped_unsafe_status += 1;
+            continue;
+        }
+
+        match &value.agent_session {
+            Some(session) =>{
+                if &session.agent != "pi" {
+                    reset_candidates_summary.skipped_invalid_session += 1;
+                    continue;
+                }
+
+                if &session.kind != "path" {
+                    reset_candidates_summary.skipped_invalid_session += 1;
+                    continue;
+                }
+
+                if session.value.is_empty() {
+                    reset_candidates_summary.skipped_invalid_session += 1;
+                    continue;
+                }
+
+                let reset_candidate = ResetCandidate {
+                    pane_id: value.pane_id.clone(),
+                    session_path: session.value.clone()
+                };
+
+                reset_candidates.push(reset_candidate);
+                reset_candidates_summary.candidates += 1;
+            },
+            None => {
+                reset_candidates_summary.skipped_missing_session += 1;
+                continue;
+            }
+        }
+
+    }
+
+    return (reset_candidates, reset_candidates_summary);
+}
+
+async fn wait_until_pi_exits(herdr_path: &str, agent: &str, pane_id: &str) {
+    let res = timeout(Duration::from_secs(15), get_agent_list(herdr_path)).await;
+
+    match res {
+        Ok(agent_result) => {
+            Ok(value) => {
+                // agent list
+            }
+        },
+        Err(error) => {
+            let error_str = format!("Error, timeout reached for agent: {} - pane_id: {} - error: {}", agent, pane_id, error);
+            Err(error_str);
+        }
+    }
+
+}
+
+pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
     let mut reload_summary = ReloadSummary {
         reloaded: 0,
         skipped_non_pi: 0,
@@ -148,12 +246,14 @@ pub fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
         if agent_status == "done" || agent_status == "idle" {
             println!("Reloading pi on pane: {}", pane_id);
 
-            let reload_pane_status = reload_pane(herdr_path, pane_id);
+            let reload_pane_status = run_in_pane(herdr_path, pane_id, "/reload").await;
 
-            if reload_pane_status {
-                reload_summary.reloaded += 1;
-            } else {
-                reload_summary.failed += 1;
+            match reload_pane_status {
+                Ok(_) => reload_summary.reloaded += 1,
+                Err(error) => {
+                    reload_summary.failed += 1;
+                    println!("{}", error);
+                }
             }
         } else {
             reload_summary.skipped_unsafe_status += 1;
