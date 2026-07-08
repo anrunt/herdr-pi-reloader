@@ -3,8 +3,6 @@ use std::time::Duration;
 use serde::{Deserialize};
 use tokio::time::timeout;
 
-use crate::herdr;
-
 #[derive(Debug)]
 pub struct ReloadSummary {
     reloaded: usize,
@@ -185,18 +183,25 @@ pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, R
     return (reset_candidates, reset_candidates_summary);
 }
 
-async fn wait_until_pi_exits(herdr_path: &str, agent: &str, pane_id: &str) {
+async fn wait_until_pi_exits(herdr_path: &str, agent: &str, pane_id: &str) -> Result<(), String> {
     let res = timeout(Duration::from_secs(15), get_agent_list(herdr_path)).await;
 
     match res {
         Ok(agent_result) => {
-            Ok(value) => {
-                // agent list
+            match agent_result {
+                Ok(agents) => {
+                    // Sprawdzamy czy agent istnieje, jesli nie zwracamy sukces, jesli nie to
+                    // zwracamy error z napisem ze pi agent dalej jest odpalony
+                    return Ok(());
+                },
+                Err(error) => {
+                    return Err(error);
+                }
             }
-        },
+        }
         Err(error) => {
             let error_str = format!("Error, timeout reached for agent: {} - pane_id: {} - error: {}", agent, pane_id, error);
-            Err(error_str);
+            return Err(error_str);
         }
     }
 
