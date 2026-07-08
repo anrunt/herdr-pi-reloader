@@ -13,7 +13,7 @@ async fn main() {
         return;
     }
 
-    if args[0] != "reload" {
+    if args[0] != "reload" && args[0] != "reset" {
         println!("Error: Unknown command");
         return;
     }
@@ -33,10 +33,17 @@ async fn main() {
         }
     };
 
-//    reload_all_pi(&herdr_path, &agents).await;
+    if args[0] == "reload" {
+        reload_all_pi(&herdr_path, &agents).await;
+        return;
+    }
 
-    let (candidates, summary) = get_reset_candidates(&agents);
+    if args[0] == "reset" {
+        let (candidates, summary) = get_reset_candidates(&agents);
 
-    println!("Candidates: {:#?}", candidates);
-    println!("Summary: {:#?}", summary);
+        println!("Candidates: {:#?}", candidates);
+        println!("Summary: {:#?}", summary);
+
+        return;
+    }
 }

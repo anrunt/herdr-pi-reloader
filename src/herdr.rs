@@ -1,7 +1,7 @@
-use std::time::Duration;
+use std::{time::Duration};
 
 use serde::{Deserialize};
-use tokio::time::timeout;
+use tokio::time::{self, timeout};
 
 #[derive(Debug)]
 pub struct ReloadSummary {
@@ -183,26 +183,45 @@ pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, R
     return (reset_candidates, reset_candidates_summary);
 }
 
-async fn wait_until_pi_exits(herdr_path: &str, agent: &str, pane_id: &str) -> Result<(), String> {
-    let res = timeout(Duration::from_secs(15), get_agent_list(herdr_path)).await;
+async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), String> {
+    let res = timeout(Duration::from_secs(15), async {
+        loop {
+            let agents = get_agent_list(herdr_path).await;
 
-    match res {
-        Ok(agent_result) => {
-            match agent_result {
+            match agents {
                 Ok(agents) => {
-                    // Sprawdzamy czy agent istnieje, jesli nie zwracamy sukces, jesli nie to
-                    // zwracamy error z napisem ze pi agent dalej jest odpalony
-                    return Ok(());
+                    let found_pi = agents.iter().any(|value| value.agent == "pi" && value.pane_id == pane_id);
+
+                    if found_pi {
+                        let sleep_time = time::Duration::from_millis(500);
+                        tokio::time::sleep(sleep_time).await;
+                    } else {
+                        return Ok(());
+                    }
+
                 },
                 Err(error) => {
                     return Err(error);
                 }
             }
         }
+    }).await;
+
+    match res {
+        Ok(agent_result) => {
+            match agent_result {
+                Ok(_) => {
+                    return Ok(());
+                },
+                Err(error) => {
+                    return Err(error);
+                }
+            }
+        },
         Err(error) => {
-            let error_str = format!("Error, timeout reached for agent: {} - pane_id: {} - error: {}", agent, pane_id, error);
+            let error_str = format!("Error, timeout reached for pane_id: {} - error: {}", pane_id, error);
             return Err(error_str);
-        }
+        },
     }
 
 }
