@@ -2,7 +2,7 @@ mod herdr;
 
 use std::{env};
 
-use crate::herdr::{get_agent_list, get_reset_candidates, reload_all_pi};
+use crate::herdr::{get_agent_list, get_reset_candidates, reload_all_pi, reset_one_candidate};
 
 #[tokio::main]
 async fn main() {
@@ -44,6 +44,11 @@ async fn main() {
         println!("Candidates: {:#?}", candidates);
         println!("Summary: {:#?}", summary);
 
-        return;
+        let reset = reset_one_candidate(&herdr_path, &candidates[0]).await;
+
+        match reset {
+            Ok(_) => println!("Success!"),
+            Err(error) => println!("{}", error)
+        }
     }
 }

@@ -223,7 +223,42 @@ async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), Stri
             return Err(error_str);
         },
     }
+}
 
+pub async fn reset_one_candidate(herdr_path: &str, candidate: &ResetCandidate) -> Result<(), String> {
+    println!("Resetting pane: {}", candidate.pane_id);
+
+    let quit_result = run_in_pane(herdr_path, candidate.pane_id.as_str(), "/quit").await;
+
+    match quit_result {
+        Ok(_) => (),
+        Err(error) => {
+            let error_str = format!("Error with resetting pane: {} - error: {}", candidate.pane_id, error);
+            return Err(error_str);
+        }
+    }
+
+    let wait_result = wait_until_pi_exits(herdr_path, &candidate.pane_id).await;
+
+    match wait_result {
+        Ok(_) => (),
+        Err(error) => {
+            let error_str = format!("Error with exiting pi on pane: {} - error: {}", candidate.pane_id, error);
+            return Err(error_str);
+        }
+    }
+
+    let start_command = format!("pi --session {}", candidate.session_path);
+
+    let start_result = run_in_pane(herdr_path, candidate.pane_id.as_str(), &start_command).await;
+
+    match start_result {
+        Ok(_) => Ok(()),
+        Err(error) => {
+            let error_str = format!("Error with starting pi on pane: {} - error: {}", candidate.pane_id, error);
+            return Err(error_str);
+        }
+    }
 }
 
 pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
