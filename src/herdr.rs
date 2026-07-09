@@ -90,7 +90,7 @@ pub async fn get_agent_list(herdr_path: &str) -> Result<Vec<AgentInfo>, String> 
                         return Ok(agents);
                     },
                     Err(error) => {
-                        let error_text = format!("Error with parsing json: {}", error.to_string());
+                        let error_text = format!("Error with parsing json: {}", error);
                         return Err(error_text);
                     }
                 }
@@ -208,16 +208,7 @@ async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), Stri
     }).await;
 
     match res {
-        Ok(agent_result) => {
-            match agent_result {
-                Ok(_) => {
-                    return Ok(());
-                },
-                Err(error) => {
-                    return Err(error);
-                }
-            }
-        },
+        Ok(agent_result) => agent_result,
         Err(error) => {
             let error_str = format!("Error, timeout reached for pane_id: {} - error: {}", pane_id, error);
             return Err(error_str);

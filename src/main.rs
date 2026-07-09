@@ -2,6 +2,8 @@ mod herdr;
 
 use std::{env};
 
+use tokio::task::JoinHandle;
+
 use crate::herdr::{get_agent_list, get_reset_candidates, reload_all_pi, reset_one_candidate};
 
 #[tokio::main]
@@ -9,7 +11,7 @@ async fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
-        println!("Usage: cargo run -- reload");
+        println!("Usage: cargo run -- reload / reset");
         return;
     }
 
@@ -44,11 +46,25 @@ async fn main() {
         println!("Candidates: {:#?}", candidates);
         println!("Summary: {:#?}", summary);
 
-        let reset = reset_one_candidate(&herdr_path, &candidates[0]).await;
+        let reset_tasks: Vec<JoinHandle<Result<(), String>>> = candidates.into_iter().map(|v| {
+            let herdr_path_c = herdr_path.clone();
+            tokio::spawn(async move {
+                let res = reset_one_candidate(&herdr_path_c, &v).await;
+                return res;
+            })
+        }).collect();
 
-        match reset {
-            Ok(_) => println!("Success!"),
-            Err(error) => println!("{}", error)
+        for task in reset_tasks {
+            let task_res = task.await;
+            match task_res {
+                Ok(res) => {
+                    match res {
+                        Ok(_) => (),
+                        Err(error) => println!("{}", error) 
+                    }
+                },
+                Err(error) => println!("Join error: {}", error)
+            }
         }
     }
 }
