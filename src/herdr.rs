@@ -57,19 +57,19 @@ pub async fn run_in_pane(herdr_path: &str, pane_id: &str, command: &str) -> Resu
         Ok(output) => {
             if output.status.success() {
                 println!("Successfully executed command: {command} on pane_id: {pane_id}");
-                return Ok(());
+                Ok(())
             } else {
                 let std_error = String::from_utf8_lossy(&output.stderr);
                 let std_out = String::from_utf8_lossy(&output.stdout);
 
                 let error_message = format!("std_err: {std_error} - std_out: {std_out}");
                 let error_str = format!("Error in executing command: {}: on pane: {} - error: {}", command, pane_id, error_message);
-                return Err(error_str);
+                Err(error_str)
             }
         },
         Err(error) => {
             let error_str = format!("Error in executing command: {}: on pane: {} - error: {}", command, pane_id, error);
-            return Err(error_str);
+            Err(error_str)
         }
     }
 
@@ -87,24 +87,24 @@ pub async fn get_agent_list(herdr_path: &str) -> Result<Vec<AgentInfo>, String> 
                 match json_result {
                     Ok(value) => {
                         let agents = value.result.agents;
-                        return Ok(agents);
+                        Ok(agents)
                     },
                     Err(error) => {
                         let error_text = format!("Error with parsing json: {}", error);
-                        return Err(error_text);
+                        Err(error_text)
                     }
                 }
             } else {
                 let error_str = String::from_utf8_lossy(&output.stderr).to_string();
                 let error_text = format!("Herdr output error: {}", error_str);
-                return Err(error_text);
+                Err(error_text)
             }
 
         },
         Err(error) => {
             let error_str = error.to_string();
             let error_text = format!("Failed to run herdr agent list: {}", error_str);
-            return Err(error_text);
+            Err(error_text)
         }
     }
 }
@@ -180,7 +180,7 @@ pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, R
 
     }
 
-    return (reset_candidates, reset_candidates_summary);
+    (reset_candidates, reset_candidates_summary)
 }
 
 async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), String> {
@@ -211,7 +211,7 @@ async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), Stri
         Ok(agent_result) => agent_result,
         Err(error) => {
             let error_str = format!("Error, timeout reached for pane_id: {} - error: {}", pane_id, error);
-            return Err(error_str);
+            Err(error_str)
         },
     }
 }
@@ -247,7 +247,7 @@ pub async fn reset_one_candidate(herdr_path: &str, candidate: &ResetCandidate) -
         Ok(_) => Ok(()),
         Err(error) => {
             let error_str = format!("Error with starting pi on pane: {} - error: {}", candidate.pane_id, error);
-            return Err(error_str);
+            Err(error_str)
         }
     }
 }

@@ -57,13 +57,11 @@ async fn main() {
         for task in reset_tasks {
             let task_res = task.await;
             match task_res {
-                Ok(res) => {
-                    match res {
-                        Ok(_) => (),
-                        Err(error) => println!("{}", error) 
-                    }
+                Ok(res) => match res {
+                    Ok(_) => (),
+                    Err(error) => println!("{}", error),
                 },
-                Err(error) => println!("Join error: {}", error)
+                Err(error) => println!("Join error: {}", error),
             }
         }
     }
