@@ -1,3 +1,5 @@
+use crossterm::event::KeyCode::{Char, Down, Esc, Up};
+use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
 use ratatui::widgets::{Paragraph, Block};
 use ratatui::layout::{Direction, Layout, Constraint};
@@ -11,15 +13,31 @@ struct AppState {
 }
 
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-    let state = AppState {
+    let mut state = AppState {
         selected: 0
     };
 
     loop {
         terminal.draw(|frame| render(frame, &state))?;
 
-        if crossterm::event::read()?.is_key_press() {
-            break Ok(());
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    Char('j') | Down => {
+                        state.selected = 1;
+                    },
+                    Char('k') | Up => {
+                        state.selected = 0;
+                    },
+                    Char('q') | Esc => {
+                        break Ok(());
+                    },
+                    Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        break Ok(());
+                    }
+                    _ => {}
+                }
+            }
         }
     }
 }
@@ -36,7 +54,7 @@ fn render(frame: &mut Frame, state: &AppState) {
 
     let menu_text_options = [
         "Reload all Pi",
-        "Reset all Pi"
+        "Reset all Pi",
     ];
 
     let menu_text = menu_text_options.iter().enumerate().map(|(i, line)| {
@@ -50,7 +68,7 @@ fn render(frame: &mut Frame, state: &AppState) {
     let main = Paragraph::new(menu_text)
         .block(Block::bordered().title("Herdr Pi Reloader"));
 
-    let footer = Paragraph::new("Press any key to quit");
+    let footer = Paragraph::new("↑/k ↓/j select • q/Esc quit");
 
     frame.render_widget(main, main_area);
     frame.render_widget(footer, footer_area);
