@@ -1,5 +1,6 @@
 mod herdr;
 mod pi;
+mod tui;
 
 use std::{env};
 
@@ -7,18 +8,34 @@ use tokio::task::JoinHandle;
 
 use crate::herdr::get_agent_list;
 use crate::pi::{get_reset_candidates, reload_all_pi, reset_one_candidate};
+use crate::tui::run;
 
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
-        println!("Usage: cargo run -- reload / reset");
+        println!("Usage: cargo run -- reload / reset / tui");
         return;
     }
 
-    if args[0] != "reload" && args[0] != "reset" {
+    let command = &args[0];
+
+    if command != "reload" && command != "reset" && command != "tui" {
         println!("Error: Unknown command");
+        return;
+    }
+
+    if command == "tui" {
+        let tui_result = run();
+
+        match tui_result {
+            Ok(_) => (),
+            Err(error) => {
+                println!("Error: {}", error);
+            }
+        }
+
         return;
     }
 
@@ -37,13 +54,13 @@ async fn main() {
         }
     };
 
-    if args[0] == "reload" {
+    if command == "reload" {
         let reload_summary = reload_all_pi(&herdr_path, &agents).await;
         println!("{:#?}", reload_summary);
         return;
     }
 
-    if args[0] == "reset" {
+    if command == "reset" {
         let (candidates, summary) = get_reset_candidates(&agents);
 
         println!("Candidates: {:#?}", candidates);
