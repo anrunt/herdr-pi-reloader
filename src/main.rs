@@ -38,7 +38,8 @@ async fn main() {
     };
 
     if args[0] == "reload" {
-        reload_all_pi(&herdr_path, &agents).await;
+        let reload_summary = reload_all_pi(&herdr_path, &agents).await;
+        println!("{:#?}", reload_summary);
         return;
     }
 

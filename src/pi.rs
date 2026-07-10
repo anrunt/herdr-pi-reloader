@@ -11,7 +11,8 @@ pub struct ReloadSummary {
     skipped_non_pi: usize,
     skipped_unsafe_status: usize,
     skipped_invalid_agent_data: usize,
-    failed: usize
+    failed: usize,
+    errors: Vec<String>
 }
 
 #[derive(Debug)]
@@ -174,13 +175,14 @@ pub async fn reset_one_candidate(herdr_path: &str, candidate: &ResetCandidate) -
     }
 }
 
-pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
+pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSummary {
     let mut reload_summary = ReloadSummary {
         reloaded: 0,
         skipped_non_pi: 0,
         skipped_unsafe_status: 0,
         skipped_invalid_agent_data: 0,
         failed: 0,
+        errors: Vec::new()
     };
 
     for (index, agent) in agents.iter().enumerate() {
@@ -224,7 +226,7 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
                 Ok(_) => reload_summary.reloaded += 1,
                 Err(error) => {
                     reload_summary.failed += 1;
-                    println!("{}", error);
+                    reload_summary.errors.push(error);
                 }
             }
         } else {
@@ -233,5 +235,6 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) {
             continue;
         }
     }
-    println!("{:#?}", reload_summary);
+
+    return reload_summary;
 }
