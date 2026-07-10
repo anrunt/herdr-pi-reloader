@@ -6,7 +6,7 @@ Ten dokument przekłada wymagania z `plans/tui-plan.md` na bezpieczną ścieżk�
 
 - Realizujemy tylko jeden krok naraz.
 - Przed każdym krokiem wyjaśniam nowy koncept i pokazuję mały zakres zmian.
-- Po każdym kroku uruchamiamy `cargo fmt` i `cargo check` oraz wykonujemy tylko potrzebną weryfikację ręczną.
+- Po każdym kroku uruchamiamy `cargo check` oraz wykonujemy tylko potrzebną weryfikację ręczną.
 - Nie uruchamiamy automatycznie `reload` ani `reset`, ponieważ mają skutki uboczne w działających panelach Pi.
 - Nie przechodzimy dalej, dopóki bieżący krok nie kompiluje się i nie jest zrozumiały.
 - Nie dodajemy testów, zgodnie z jawnym non-goal planu produktu.
@@ -93,7 +93,7 @@ Zakres pierwszej zmiany:
 1. Dodać `src/tui.rs` z prostą funkcją startową wypisującą tymczasowy komunikat.
 2. Zadeklarować moduł w `src/main.rs`.
 3. Rozszerzyć routing i usage o komendę `tui`, nie zmieniając zachowania `reload` i `reset`.
-4. Uruchomić `cargo fmt`, `cargo check` i `cargo run --quiet -- tui`.
+4. Uruchomić `cargo check` i `cargo run --quiet -- tui`.
 
 Poza zakresem tego kroku: zależności terminalowe, raw mode, renderowanie, obsługa klawiszy, refaktor operacji i manifest Herdr.
 
