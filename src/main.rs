@@ -1,10 +1,12 @@
 mod herdr;
+mod pi;
 
 use std::{env};
 
 use tokio::task::JoinHandle;
 
-use crate::herdr::{get_agent_list, get_reset_candidates, reload_all_pi, reset_one_candidate};
+use crate::herdr::get_agent_list;
+use crate::pi::{get_reset_candidates, reload_all_pi, reset_one_candidate};
 
 #[tokio::main]
 async fn main() {
