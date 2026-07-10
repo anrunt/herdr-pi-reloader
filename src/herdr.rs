@@ -1,6 +1,7 @@
 use std::{time::Duration};
 
 use serde::{Deserialize};
+use shell_escape::unix::escape;
 use tokio::time::{self, timeout};
 
 #[derive(Debug)]
@@ -239,7 +240,8 @@ pub async fn reset_one_candidate(herdr_path: &str, candidate: &ResetCandidate) -
         }
     }
 
-    let start_command = format!("pi --session {}", candidate.session_path);
+    let safe_session_path = escape(std::borrow::Cow::Borrowed(&candidate.session_path));
+    let start_command = format!("pi --session {}", safe_session_path);
 
     let start_result = run_in_pane(herdr_path, candidate.pane_id.as_str(), &start_command).await;
 
