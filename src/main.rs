@@ -32,7 +32,7 @@ async fn main() {
         match tui_result {
             Ok(_) => (),
             Err(error) => {
-                println!("Error: {}", error);
+                eprintln!("Error: {}", error);
             }
         }
 
