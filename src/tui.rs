@@ -1,8 +1,10 @@
 use crossterm::event::KeyCode::{Char, Down, Esc, Up};
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::{DefaultTerminal, Frame};
 use ratatui::widgets::{Paragraph, Block};
 use ratatui::layout::{Direction, Layout, Constraint};
+use ratatui::text::{Line, Span};
 
 pub fn run() -> std::io::Result<()> {
     ratatui::run(app)
@@ -59,11 +61,11 @@ fn render(frame: &mut Frame, state: &AppState) {
 
     let menu_text = menu_text_options.iter().enumerate().map(|(i, line)| {
         if i == state.selected {
-            format!("> {}", line)
+            Span::styled(format!("> {}", line), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)).into()
         } else {
-            format!("  {}", line)
+            Span::styled(format!("  {}", line), Style::default()).into()
         }
-    }).collect::<Vec<String>>().join("\n");
+    }).collect::<Vec<Line<'_>>>();
 
     let main = Paragraph::new(menu_text)
         .block(Block::bordered().title("Herdr Pi Reloader"));
