@@ -24,7 +24,9 @@ pub async fn run() -> io::Result<()> {
 enum Screen {
     Menu,
     RunningReload,
-    ResetPlaceholder
+    ResetPlaceholder,
+    ReloadResult(String),
+    Error(String)
 }
 
 struct AppState {
