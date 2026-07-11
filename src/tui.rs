@@ -1,4 +1,4 @@
-use crossterm::event::KeyCode::{Char, Down, Esc, Up};
+use crossterm::event::KeyCode::{Char, Down, Enter, Esc, Up};
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::{DefaultTerminal, Frame};
@@ -10,13 +10,22 @@ pub fn run() -> std::io::Result<()> {
     ratatui::run(app)
 }
 
+#[derive(PartialEq)]
+enum Screen {
+    Menu,
+    RunningReload,
+    ResetPlaceholder
+}
+
 struct AppState {
-    selected: usize
+    selected: usize,
+    screen: Screen
 }
 
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     let mut state = AppState {
-        selected: 0
+        selected: 0,
+        screen: Screen::Menu 
     };
 
     loop {
@@ -24,20 +33,53 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
-                match key.code {
-                    Char('j') | Down => {
-                        state.selected = 1;
+                match state.screen {
+                    Screen::Menu => {
+                        match key.code {
+                            Char('j') | Down => {
+                                state.selected = 1;
+                            },
+                            Char('k') | Up => {
+                                state.selected = 0;
+                            },
+                            Enter => {
+                                if state.selected == 0 {
+                                    state.screen = Screen::RunningReload;
+                                } else {
+                                    state.screen = Screen::ResetPlaceholder;
+                                }
+                            }
+                            Char('q') | Esc => {
+                                break Ok(());
+                            },
+                            Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                break Ok(());
+                            }
+                            _ => {}
+                        }
                     },
-                    Char('k') | Up => {
-                        state.selected = 0;
+                    Screen::RunningReload => {
+                        match key.code {
+                            Char('q') | Esc => {
+                                break Ok(());
+                            },
+                            Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                break Ok(());
+                            }
+                            _ => {}
+                        }
                     },
-                    Char('q') | Esc => {
-                        break Ok(());
+                    Screen::ResetPlaceholder => {
+                        match key.code {
+                            Char('q') | Esc => {
+                                break Ok(());
+                            },
+                            Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                break Ok(());
+                            }
+                            _ => {}
+                        }
                     },
-                    Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        break Ok(());
-                    }
-                    _ => {}
                 }
             }
         }
@@ -54,24 +96,44 @@ fn render(frame: &mut Frame, state: &AppState) {
         ])
         .areas(frame.area());
 
-    let menu_text_options = [
-        "Reload all Pi",
-        "Reset all Pi",
-    ];
+    if state.screen == Screen::Menu {
+        let menu_text_options = [
+            "Reload all Pi",
+            "Reset all Pi",
+        ];
 
-    let menu_text = menu_text_options.iter().enumerate().map(|(i, line)| {
-        if i == state.selected {
-            Span::styled(format!("> {}", line), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)).into()
-        } else {
-            Span::styled(format!("  {}", line), Style::default()).into()
-        }
-    }).collect::<Vec<Line<'_>>>();
+        let menu_text = menu_text_options.iter().enumerate().map(|(i, line)| {
+            if i == state.selected {
+                Span::styled(format!("> {}", line), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)).into()
+            } else {
+                Span::styled(format!("  {}", line), Style::default()).into()
+            }
+        }).collect::<Vec<Line<'_>>>();
 
-    let main = Paragraph::new(menu_text)
-        .block(Block::bordered().title("Herdr Pi Reloader"));
+        let main = Paragraph::new(menu_text)
+            .block(Block::bordered().title("Herdr Pi Reloader"));
 
-    let footer = Paragraph::new("↑/k ↓/j select • q/Esc quit");
+        let footer = Paragraph::new("↑/k ↓/j select • q/Esc quit");
 
-    frame.render_widget(main, main_area);
-    frame.render_widget(footer, footer_area);
+        frame.render_widget(main, main_area);
+        frame.render_widget(footer, footer_area);
+
+    } else if state.screen == Screen::RunningReload {
+        let main = Paragraph::new("Reloading Pi instances...")
+            .block(Block::bordered().title("Herdr Pi Reloader"));
+
+        let footer = Paragraph::new("q/Esc quit placeholder");
+
+        frame.render_widget(main, main_area);
+        frame.render_widget(footer, footer_area);
+
+    } else if state.screen == Screen::ResetPlaceholder {
+        let main = Paragraph::new("Resetting Pi instances...")
+            .block(Block::bordered().title("Herdr Pi Reloader"));
+
+        let footer = Paragraph::new("q/Esc quit");
+
+        frame.render_widget(main, main_area);
+        frame.render_widget(footer, footer_area);
+    }
 }
