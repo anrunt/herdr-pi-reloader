@@ -29,7 +29,6 @@ pub async fn run_in_pane(herdr_path: &str, pane_id: &str, command: &str) -> Resu
     match tokio::process::Command::new(herdr_path).args(["pane", "run", pane_id, command]).output().await {
         Ok(output) => {
             if output.status.success() {
-                println!("Successfully executed command: {command} on pane_id: {pane_id}");
                 Ok(())
             } else {
                 let std_error = String::from_utf8_lossy(&output.stderr);

@@ -139,7 +139,6 @@ async fn wait_until_pi_exits(herdr_path: &str, pane_id: &str) -> Result<(), Stri
 }
 
 pub async fn reset_one_candidate(herdr_path: &str, candidate: &ResetCandidate) -> Result<(), String> {
-    println!("Resetting pane: {}", candidate.pane_id);
 
     let quit_result = run_in_pane(herdr_path, candidate.pane_id.as_str(), "/quit").await;
 
@@ -185,8 +184,7 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
         errors: Vec::new()
     };
 
-    for (index, agent) in agents.iter().enumerate() {
-        println!("Agent nr: {}", index);
+    for (_index, agent) in agents.iter().enumerate() {
 
         let pane_id = agent.pane_id.as_str();
         let agent_name = agent.agent.as_str();
@@ -199,9 +197,8 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
         ];
 
         let mut invalid_agent_data = false;
-        for (name, value) in required_fields {
+        for (_name, value) in required_fields {
             if value.is_empty() {
-                println!("Missing {} value!", name);
                 invalid_agent_data = true;
             }
         }
@@ -213,12 +210,10 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
 
         if agent_name != "pi" {
             reload_summary.skipped_non_pi += 1;
-            println!("Not pi - skipping");
             continue;
         }
 
         if agent_status == "done" || agent_status == "idle" {
-            println!("Reloading pi on pane: {}", pane_id);
 
             let reload_pane_status = run_in_pane(herdr_path, pane_id, "/reload").await;
 
@@ -231,7 +226,6 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
             }
         } else {
             reload_summary.skipped_unsafe_status += 1;
-            println!("Agent on pane: {} is {} - skipping", pane_id, agent_status);
             continue;
         }
     }

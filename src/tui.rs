@@ -5,9 +5,19 @@ use ratatui::{DefaultTerminal, Frame};
 use ratatui::widgets::{Paragraph, Block};
 use ratatui::layout::{Direction, Layout, Constraint};
 use ratatui::text::{Line, Span};
+use std::io;
 
-pub fn run() -> std::io::Result<()> {
-    ratatui::run(app)
+pub async fn run() -> io::Result<()> {
+   let mut terminal = ratatui::try_init()?;
+
+   let app_result = app(&mut terminal).await;
+
+   let restore_result = ratatui::try_restore();
+
+   match restore_result {
+       Ok(()) => app_result,
+       Err(error) => Err(error),
+   }
 }
 
 #[derive(PartialEq)]
@@ -22,7 +32,7 @@ struct AppState {
     screen: Screen
 }
 
-fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     let mut state = AppState {
         selected: 0,
         screen: Screen::Menu 

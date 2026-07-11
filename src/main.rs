@@ -27,7 +27,7 @@ async fn main() {
     }
 
     if command == "tui" {
-        let tui_result = run();
+        let tui_result = run().await;
 
         match tui_result {
             Ok(_) => (),
