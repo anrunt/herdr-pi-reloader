@@ -8,7 +8,7 @@ use ratatui::text::{Line, Span};
 use std::{env, io};
 
 use crate::herdr::get_agent_list;
-use crate::pi::reload_all_pi;
+use crate::pi::{ReloadSummary, reload_all_pi};
 
 pub async fn run() -> io::Result<()> {
    let mut terminal = ratatui::try_init()?;
@@ -28,7 +28,7 @@ enum Screen {
     Menu,
     RunningReload,
     ResetPlaceholder,
-    ReloadResult(String),
+    ReloadResult(ReloadSummary),
     Error(String)
 }
 
@@ -74,7 +74,7 @@ async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                                     Ok(agents) => {
                                         let reload_summary = reload_all_pi(&herdr_path, &agents).await;
 
-                                        state.screen = Screen::ReloadResult(format!("{:#?}",reload_summary));
+                                        state.screen = Screen::ReloadResult(reload_summary);
                                     },
                                     Err(error) => {
                                         state.screen = Screen::Error(format!("Failed to get agent list: {}", error));
@@ -136,7 +136,7 @@ fn render(frame: &mut Frame, state: &AppState) {
             let main = Paragraph::new("Reloading Pi instances...")
                 .block(Block::bordered().title("Herdr Pi Reloader"));
 
-            let footer = Paragraph::new("Operation in progess...");
+            let footer = Paragraph::new("Operation in progress...");
 
             frame.render_widget(main, main_area);
             frame.render_widget(footer, footer_area);
@@ -151,12 +151,13 @@ fn render(frame: &mut Frame, state: &AppState) {
             frame.render_widget(footer, footer_area);
         },
         Screen::ReloadResult(ref result) => {
-            let mut lines = vec![
-                Line::from("Reload Completed"),
+            let lines = vec![
+                Line::from("Reload complete"),
                 Line::from(""),
+                Line::from(format!("Reloaded: {}", result.reloaded)),
+                Line::from(format!("Skipped: {}", result.skipped_unsafe_status)),
+                Line::from(format!("Failed: {}", result.failed + result.skipped_invalid_agent_data))
             ];
-
-            lines.extend(result.lines().map(|line| Line::from(line)));
 
             let main = Paragraph::new(lines)
                 .block(Block::bordered().title("Herdr Pi Reloader"));

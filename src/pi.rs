@@ -5,14 +5,14 @@ use tokio::time::{self, timeout};
 
 use crate::herdr::{AgentInfo, get_agent_list, run_in_pane};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ReloadSummary {
-    reloaded: usize,
-    skipped_non_pi: usize,
-    skipped_unsafe_status: usize,
-    skipped_invalid_agent_data: usize,
-    failed: usize,
-    errors: Vec<String>
+    pub(crate) reloaded: usize,
+    pub(crate) skipped_non_pi: usize,
+    pub(crate) skipped_unsafe_status: usize,
+    pub(crate) skipped_invalid_agent_data: usize,
+    pub(crate) failed: usize,
+    pub(crate) errors: Vec<String>
 }
 
 #[derive(Debug)]
