@@ -151,8 +151,20 @@ fn render(frame: &mut Frame, state: &AppState) {
             frame.render_widget(footer, footer_area);
         },
         Screen::ReloadResult(ref result) => {
+            let failed = result.failed + result.skipped_invalid_agent_data;
+
+            let (heading_text, heading_color) = if failed > 0 {
+                ("Completed with errors", Color::Red)
+            } else if result.reloaded > 0 {
+                ("Success", Color::Green)
+            } else {
+                ("Nothing to do", Color::Yellow)
+            };
+
+            let heading_line = Line::from(Span::styled(format!("{}", heading_text), Style::default().fg(heading_color)));
+
             let lines = vec![
-                Line::from("Reload complete"),
+                heading_line,
                 Line::from(""),
                 Line::from(format!("Reloaded: {}", result.reloaded)),
                 Line::from(format!("Skipped: {}", result.skipped_unsafe_status)),
