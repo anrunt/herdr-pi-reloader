@@ -1,4 +1,5 @@
 use std::{time::Duration};
+use tokio::task::JoinHandle;
 
 use shell_escape::unix::escape;
 use tokio::time::{self, timeout};
@@ -11,6 +12,14 @@ pub struct ReloadSummary {
     pub(crate) skipped_non_pi: usize,
     pub(crate) skipped_unsafe_status: usize,
     pub(crate) skipped_invalid_agent_data: usize,
+    pub(crate) failed: usize,
+    pub(crate) errors: Vec<String>
+}
+
+#[derive(Debug)]
+pub struct ResetSummary {
+    pub(crate) reset: usize,
+    pub(crate) skipped_unsafe_status: usize,
     pub(crate) failed: usize,
     pub(crate) errors: Vec<String>
 }
@@ -231,4 +240,64 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
     }
 
     return reload_summary;
+}
+
+pub(crate) async fn reset_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ResetSummary {
+    let (candidates, candidates_summary) = get_reset_candidates(agents);
+
+    let mut reset_summary = ResetSummary {
+        reset: 0,
+        skipped_unsafe_status: candidates_summary.skipped_unsafe_status,
+        failed: candidates_summary.skipped_invalid_agent_data + candidates_summary.skipped_missing_session + candidates_summary.skipped_invalid_session,
+        errors: Vec::new()
+    };
+
+    if candidates_summary.skipped_invalid_agent_data > 0 {
+        reset_summary.errors.push(format!(
+            "{} reset candidate(s) had invalid agent data",
+            candidates_summary.skipped_invalid_agent_data
+        ));
+    }
+
+    if candidates_summary.skipped_missing_session > 0 {
+        reset_summary.errors.push(format!(
+            "{} reset candidate(s) had no session data",
+            candidates_summary.skipped_missing_session
+        ));
+    }
+
+    if candidates_summary.skipped_invalid_session > 0 {
+        reset_summary.errors.push(format!(
+            "{} reset candidate(s) had invalid session data",
+            candidates_summary.skipped_invalid_session
+        ));
+    }
+
+    let reset_tasks: Vec<JoinHandle<Result<(), String>>> = candidates.into_iter().map(|candidate| {
+        let herdr_path_c = herdr_path.to_string();
+        tokio::spawn(async move {
+            let res = reset_one_candidate(&herdr_path_c, &candidate).await;
+            return res;
+        })
+    }).collect();
+
+    for task in reset_tasks {
+        let task_res = task.await;
+        match task_res {
+            Ok(res) => match res {
+                Ok(_) => reset_summary.reset += 1,
+                Err(error) => {
+                    reset_summary.failed += 1;
+                    reset_summary.errors.push(error);
+                },
+            },
+            Err(join_error) => {
+                let error_str = format!("Join error: {}", join_error);
+                reset_summary.failed += 1;
+                reset_summary.errors.push(error_str);
+            },
+        }
+    }
+
+    return reset_summary;
 }

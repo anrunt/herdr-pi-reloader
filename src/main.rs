@@ -5,10 +5,8 @@ mod tui;
 
 use std::{env};
 
-use tokio::task::JoinHandle;
-
 use crate::herdr::get_agent_list;
-use crate::pi::{get_reset_candidates, reload_all_pi, reset_one_candidate};
+use crate::pi::{reload_all_pi, reset_all_pi};
 use crate::tui::run;
 
 #[tokio::main]
@@ -62,28 +60,8 @@ async fn main() {
     }
 
     if command == "reset" {
-        let (candidates, summary) = get_reset_candidates(&agents);
-
-        println!("Candidates: {:#?}", candidates);
-        println!("Summary: {:#?}", summary);
-
-        let reset_tasks: Vec<JoinHandle<Result<(), String>>> = candidates.into_iter().map(|v| {
-            let herdr_path_c = herdr_path.clone();
-            tokio::spawn(async move {
-                let res = reset_one_candidate(&herdr_path_c, &v).await;
-                return res;
-            })
-        }).collect();
-
-        for task in reset_tasks {
-            let task_res = task.await;
-            match task_res {
-                Ok(res) => match res {
-                    Ok(_) => (),
-                    Err(error) => println!("{}", error),
-                },
-                Err(error) => println!("Join error: {}", error),
-            }
-        }
+        let reset_summary = reset_all_pi(&herdr_path, &agents).await;
+        println!("{:#?}", reset_summary);
+        return;
     }
 }
