@@ -24,7 +24,6 @@ pub async fn run() -> io::Result<()> {
     }
 }
 
-#[derive(PartialEq)]
 enum Screen {
     Menu,
     RunningReload,

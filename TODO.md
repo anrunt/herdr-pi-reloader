@@ -1,4 +1,4 @@
 -[x] Break main.rs into multiple functions
--[] Add resetting pi (closing and open back)
+-[x] Add resetting pi (closing and open back)
 -[] TUI for overflow pane so user can select reload / reset pi instances
 -[] Resetting other harnesses?
