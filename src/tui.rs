@@ -1,14 +1,15 @@
 use crossterm::event::KeyCode::{Char, Down, Enter, Esc, Up};
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
 use std::{env, io};
 
 use crate::herdr::get_agent_list;
 use crate::pi::{ReloadSummary, reload_all_pi};
+use crate::render::{
+    render_error, render_menu, render_reload_result, render_reset_placeholder,
+    render_running_reload,
+};
 
 pub async fn run() -> io::Result<()> {
     let mut terminal = ratatui::try_init()?;
@@ -110,123 +111,12 @@ fn render(frame: &mut Frame, state: &AppState) {
         .constraints(vec![Constraint::Min(0), Constraint::Length(1)])
         .areas(frame.area());
 
-    match state.screen {
-        Screen::Menu => {
-            let menu_text_options = ["Reload all Pi", "Reset all Pi"];
-
-            let menu_text = menu_text_options
-                .iter()
-                .enumerate()
-                .map(|(i, line)| {
-                    if i == state.selected {
-                        Span::styled(
-                            format!("> {}", line),
-                            Style::default()
-                                .fg(Color::Cyan)
-                                .add_modifier(Modifier::BOLD),
-                        )
-                        .into()
-                    } else {
-                        Span::styled(format!("  {}", line), Style::default()).into()
-                    }
-                })
-                .collect::<Vec<Line<'_>>>();
-
-            let main =
-                Paragraph::new(menu_text).block(Block::bordered().title("Herdr Pi Reloader"));
-
-            let footer = Paragraph::new("↑/k ↓/j select • Enter run • q/Esc quit");
-
-            frame.render_widget(main, main_area);
-            frame.render_widget(footer, footer_area);
-        }
-        Screen::RunningReload => {
-            let main = Paragraph::new("Reloading Pi instances...")
-                .block(Block::bordered().title("Herdr Pi Reloader"));
-
-            let footer = Paragraph::new("Operation in progress...");
-
-            frame.render_widget(main, main_area);
-            frame.render_widget(footer, footer_area);
-        }
-        Screen::ResetPlaceholder => {
-            let main = Paragraph::new("Resetting Pi instances...")
-                .block(Block::bordered().title("Herdr Pi Reloader"));
-
-            let footer = Paragraph::new("q/Esc quit");
-
-            frame.render_widget(main, main_area);
-            frame.render_widget(footer, footer_area);
-        }
-        Screen::ReloadResult(ref result) => {
-            let failed = result.failed + result.skipped_invalid_agent_data;
-
-            let (heading_text, heading_color) = if failed > 0 {
-                ("Completed with errors", Color::Red)
-            } else if result.reloaded > 0 {
-                ("Success", Color::Green)
-            } else {
-                ("Nothing to do", Color::Yellow)
-            };
-
-            let heading_line = Line::from(Span::styled(
-                format!("{}", heading_text),
-                Style::default().fg(heading_color).add_modifier(Modifier::BOLD),
-            ));
-
-            let mut lines = vec![
-                heading_line,
-                Line::from(""),
-                Line::from(format!("Reloaded: {}", result.reloaded)),
-                Line::from(format!("Skipped: {}", result.skipped_unsafe_status)),
-                Line::from(format!(
-                    "Failed: {}",
-                    result.failed + result.skipped_invalid_agent_data
-                )),
-            ];
-
-            if !result.errors.is_empty() {
-                let max_errors = 5;
-                let total_errors = result.errors.len();
-                let hidden_errors = total_errors.saturating_sub(max_errors);
-
-                lines.push(Line::from(""));
-                lines.push(Line::from("Errors:"));
-                lines.push(Line::from(""));
-
-                let error_lines = result
-                    .errors
-                    .iter()
-                    .take(max_errors)
-                    .enumerate()
-                    .map(|(i, value)| Line::from(format!("Error {}: {}", i + 1, value)))
-                    .collect::<Vec<Line<'_>>>();
-
-                lines.extend(error_lines);
-
-                if hidden_errors > 0 {
-                    lines.push(Line::from(""));
-                    lines.push(Line::from(format!(
-                        "...and {} more error(s)",
-                        hidden_errors
-                    )));
-                }
-            }
-
-            let main = Paragraph::new(lines).block(Block::bordered().title("Herdr Pi Reloader"));
-
-            let footer = Paragraph::new("Enter/q/Esc quit");
-
-            frame.render_widget(main, main_area);
-            frame.render_widget(footer, footer_area);
-        }
-        Screen::Error(ref error) => {
-            let main =
-                Paragraph::new(error.as_str()).block(Block::bordered().title("Herdr Pi Reloader"));
-
-            let footer = Paragraph::new("Enter/q/Esc quit");
-            frame.render_widget(main, main_area);
-            frame.render_widget(footer, footer_area);
-        }
+    match &state.screen {
+        Screen::Menu => render_menu(frame, main_area, footer_area, state.selected),
+        Screen::RunningReload => render_running_reload(frame, main_area, footer_area),
+        Screen::ResetPlaceholder => render_reset_placeholder(frame, main_area, footer_area),
+        Screen::ReloadResult(result) => render_reload_result(frame, main_area, footer_area, result),
+        Screen::Error(error) => render_error(frame, main_area, footer_area, error),
     }
 }
+

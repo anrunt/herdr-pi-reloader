@@ -1,5 +1,6 @@
 mod herdr;
 mod pi;
+mod render;
 mod tui;
 
 use std::{env};
