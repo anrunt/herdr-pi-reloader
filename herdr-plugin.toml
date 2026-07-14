@@ -5,7 +5,13 @@ min_herdr_version = "0.7.0"
 platforms = ["linux", "macos"]
 
 [[actions]]
-id = "reload"
-title = "Reload all Pi panes"
+id = "open"
+title = "Open Pi Reloader"
 contexts = ["workspace"]
-command = ["cargo", "run", "--quiet", "--", "reload"]
+command = ["sh", "-lc", "exec \"${HERDR_BIN_PATH:-herdr}\" plugin pane open --plugin \"${HERDR_PLUGIN_ID:-herdr-pi-reloader.pi-reloader}\" --entrypoint tui --placement overlay --focus"]
+
+[[panes]]
+id = "tui"
+title = "Pi Reloader"
+placement = "overlay"
+command = ["cargo", "run", "--quiet", "--", "tui"]
