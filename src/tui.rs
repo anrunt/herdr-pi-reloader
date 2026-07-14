@@ -2,7 +2,6 @@ use crossterm::event::KeyCode::{Char, Down, Enter, Esc, Up};
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::{DefaultTerminal, Frame};
-use std::thread::sleep;
 use std::time::Duration;
 use std::{env, io};
 use tokio::task::JoinHandle;
@@ -142,7 +141,6 @@ async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                                             };
 
                                             let result = reset_all_pi(&herdr_path, &agents).await;
-//                                            sleep(Duration::from_secs(5)); // Sleep for testing
                                             Ok(result)
                                         });
 
