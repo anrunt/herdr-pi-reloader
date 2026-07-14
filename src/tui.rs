@@ -2,6 +2,7 @@ use crossterm::event::KeyCode::{Char, Down, Enter, Esc, Up};
 use crossterm::event::{self, Event, KeyEventKind, KeyModifiers};
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::{DefaultTerminal, Frame};
+use std::thread::sleep;
 use std::time::Duration;
 use std::{env, io};
 use tokio::task::JoinHandle;
@@ -9,8 +10,7 @@ use tokio::task::JoinHandle;
 use crate::herdr::get_agent_list;
 use crate::pi::{ReloadSummary, ResetSummary, reload_all_pi, reset_all_pi};
 use crate::render::{
-    render_error, render_menu, render_reload_result, render_reset_placeholder,
-    render_running_reload,
+    render_error, render_menu, render_reload_result, render_reset_result, render_running_reload, render_running_reset,
 };
 
 pub async fn run() -> io::Result<()> {
@@ -30,7 +30,6 @@ enum Screen {
     Menu,
     RunningReload,
     RunningReset,
-    ResetPlaceholder,
     ReloadResult(ReloadSummary),
     ResetResult(ResetSummary),
     Error(String),
@@ -128,6 +127,7 @@ async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
 
                                     let handler: JoinHandle<Result<ResetSummary, String>> =
                                         tokio::spawn(async {
+
                                             let herdr_path_result = env::var("HERDR_BIN_PATH");
                                             let herdr_path = match herdr_path_result {
                                                 Ok(path) => path,
@@ -142,6 +142,7 @@ async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                                             };
 
                                             let result = reset_all_pi(&herdr_path, &agents).await;
+//                                            sleep(Duration::from_secs(5)); // Sleep for testing
                                             Ok(result)
                                         });
 
@@ -150,13 +151,13 @@ async fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                             }
                             _ => {}
                         },
-                        Screen::ReloadResult(_) | Screen::Error(_) => match key.code {
+                        Screen::ReloadResult(_) | Screen::Error(_) | Screen::ResetResult(_) => match key.code {
                             Enter => {
                                 break Ok(());
                             }
                             _ => {}
                         },
-                        Screen::RunningReload | Screen::ResetPlaceholder => {}
+                        Screen::RunningReload | Screen::RunningReset => {}
                     }
                 }
             }
@@ -174,8 +175,9 @@ fn render(frame: &mut Frame, state: &AppState) {
     match &state.screen {
         Screen::Menu => render_menu(frame, main_area, footer_area, state.selected),
         Screen::RunningReload => render_running_reload(frame, main_area, footer_area),
-        Screen::ResetPlaceholder => render_reset_placeholder(frame, main_area, footer_area),
         Screen::ReloadResult(result) => render_reload_result(frame, main_area, footer_area, result),
         Screen::Error(error) => render_error(frame, main_area, footer_area, error),
+        Screen::RunningReset => render_running_reset(frame, main_area, footer_area, &state.spinner_frame),
+        Screen::ResetResult(result) => render_reset_result(frame, main_area, footer_area, result),
     }
 }
