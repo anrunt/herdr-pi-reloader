@@ -120,6 +120,12 @@ herdr plugin log list --plugin herdr-pi-reloader.pi-reloader
 herdr plugin unlink herdr-pi-reloader.pi-reloader
 ```
 
+## Contributing
+
+Contributions are highly welcome. If you have an idea for improving the workflow, user experience, reliability, or platform support, feel free to [open an issue](https://github.com/anrunt/herdr-pi-reloader/issues) or submit a pull request.
+
+Please report any bugs or unexpected behavior through GitHub Issues. When possible, include your Herdr and plugin versions, operating system, reproduction steps, expected and actual behavior, and relevant plugin logs.
+
 ## Trust and security
 
 Herdr plugins run as the current user and are not sandboxed. Review [`herdr-plugin.toml`](./herdr-plugin.toml) and the source before installing.
