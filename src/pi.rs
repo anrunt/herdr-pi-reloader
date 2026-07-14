@@ -53,8 +53,8 @@ pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, R
     let mut reset_candidates: Vec<ResetCandidate> = Vec::new();
 
     for value in agent_list {
-        if value.agent.is_empty() {
-            reset_candidates_summary.skipped_invalid_agent_data += 1;
+        if value.agent != "pi" {
+            reset_candidates_summary.skipped_non_pi += 1;
             continue;
         }
 
@@ -65,11 +65,6 @@ pub fn get_reset_candidates(agent_list: &[AgentInfo]) -> (Vec<ResetCandidate>, R
 
         if value.agent_status.is_empty() {
             reset_candidates_summary.skipped_invalid_agent_data += 1;
-            continue;
-        }
-
-        if value.agent != "pi" {
-            reset_candidates_summary.skipped_non_pi += 1;
             continue;
         }
 
@@ -199,26 +194,26 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
         let agent_name = agent.agent.as_str();
         let agent_status = agent.agent_status.as_str();
 
+        if agent_name != "pi" {
+            reload_summary.skipped_non_pi += 1;
+            continue;
+        }
+
         let required_fields = [
             ("pane_id", pane_id),
-            ("agent_name", agent_name),
             ("agent_status", agent_status),
         ];
 
         let mut invalid_agent_data = false;
-        for (_name, value) in required_fields {
+        for (name, value) in required_fields {
             if value.is_empty() {
                 invalid_agent_data = true;
+                reload_summary.errors.push(format!("Pi agent is missing {}", name));
             }
         }
 
         if invalid_agent_data {
             reload_summary.skipped_invalid_agent_data += 1;
-            continue;
-        }
-
-        if agent_name != "pi" {
-            reload_summary.skipped_non_pi += 1;
             continue;
         }
 

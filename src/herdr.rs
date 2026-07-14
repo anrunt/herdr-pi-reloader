@@ -2,15 +2,21 @@ use serde::{Deserialize};
 
 #[derive(Deserialize)]
 pub(crate) struct AgentSession {
+    #[serde(default)]
     pub(crate) agent: String,
+    #[serde(default)]
     pub(crate) kind: String,
+    #[serde(default)]
     pub(crate) value: String
 }
 
 #[derive(Deserialize)]
 pub struct AgentInfo {
+    #[serde(default)]
     pub(crate) agent: String,
+    #[serde(default)]
     pub(crate) agent_status: String,
+    #[serde(default)]
     pub(crate) pane_id: String,
     pub(crate) agent_session: Option<AgentSession>
 }
