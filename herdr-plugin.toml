@@ -8,7 +8,7 @@ platforms = ["linux", "macos"]
 id = "open"
 title = "Open Pi Reloader"
 contexts = ["workspace"]
-command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin \"$HERDR_PLUGIN_ID\" --entrypoint tui --placement overlay --focus"]
+command = ["sh", "-lc", "exec \"${HERDR_BIN_PATH:-herdr}\" plugin pane open --plugin \"${HERDR_PLUGIN_ID:-herdr-pi-reloader.pi-reloader}\" --entrypoint tui --placement overlay --focus"]
 
 [[panes]]
 id = "tui"
