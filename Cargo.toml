@@ -1,6 +1,6 @@
 [package]
 name = "herdr-pi-reloader"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Reload or restart idle Pi agent sessions from a Herdr overlay"
 license = "MIT"
