@@ -160,7 +160,7 @@ pub async fn is_pi_running_in_pane(herdr_path: &str, pane_id: &str) -> Result<Pa
                 if p.argv
                     .first()
                     .and_then(|arg| Path::new(arg).file_name())
-                    .is_some_and(|name| name == "pi") 
+                    .is_some_and(|name| name == "pi")
                 {
                     return Ok(PanePiStatus::RunningPi);
                 }
@@ -168,7 +168,7 @@ pub async fn is_pi_running_in_pane(herdr_path: &str, pane_id: &str) -> Result<Pa
             Ok(PanePiStatus::NonPi)
         },
         Err(error) => {
-            let error_str = format!("Failed to check if pi is running in pane: {}", error);
+            let error_str = format!("Failed to check if pi is running in pane_id: {}, error: {}",pane_id, error);
             Err(error_str)
         }
     }
