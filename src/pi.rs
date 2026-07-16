@@ -4,7 +4,7 @@ use tokio::task::JoinHandle;
 use shell_escape::unix::escape;
 use tokio::time::{self, timeout};
 
-use crate::herdr::{AgentInfo, get_agent_list, run_in_pane};
+use crate::herdr::{AgentInfo, PanePiStatus, get_agent_list, is_pi_running_in_pane, run_in_pane};
 
 #[derive(Debug, PartialEq)]
 pub struct ReloadSummary {
@@ -217,8 +217,22 @@ pub async fn reload_all_pi(herdr_path: &str, agents: &[AgentInfo]) -> ReloadSumm
             continue;
         }
 
-        if agent_status == "done" || agent_status == "idle" {
+        match is_pi_running_in_pane(herdr_path, pane_id).await {
+            Ok(pane_status) => {
+                if matches!(pane_status, PanePiStatus::NonPi) {
+                    reload_summary.skipped_non_pi += 1;
+                    continue;
+                }
+            },
+            Err(error) => {
+                reload_summary.failed += 1;
+                reload_summary.errors.push(error);
+                continue;
+            }
 
+        }
+
+        if agent_status == "done" || agent_status == "idle" {
             let reload_pane_status = run_in_pane(herdr_path, pane_id, "/reload").await;
 
             match reload_pane_status {
