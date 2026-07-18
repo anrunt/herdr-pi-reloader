@@ -4,6 +4,9 @@ A small [Herdr](https://herdr.dev/) plugin for safely reloading or restarting Pi
 
 The plugin only operates on Pi agents that Herdr reports as `idle` or `done`. Busy agents are skipped.
 
+## Preview
+![Herdr Pi Reloader popup with reset and reload actions](https://github.com/user-attachments/assets/09346711-c37e-4ad4-a422-0e05b0a3ce90)
+
 ## Features
 
 - **Reload all Pi** sends `/reload` to every eligible Pi pane.
