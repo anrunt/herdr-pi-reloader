@@ -1,6 +1,6 @@
 # Herdr Pi Reloader
 
-A small [Herdr](https://herdr.dev/) plugin for safely reloading or restarting Pi agent sessions from an overlay TUI.
+A small [Herdr](https://herdr.dev/) plugin for safely reloading or restarting Pi agent sessions from a popup TUI without changing the tiled tab layout.
 
 The plugin only operates on Pi agents that Herdr reports as `idle` or `done`. Busy agents are skipped.
 
@@ -8,11 +8,11 @@ The plugin only operates on Pi agents that Herdr reports as `idle` or `done`. Bu
 
 - **Reload all Pi** sends `/reload` to every eligible Pi pane.
 - **Reset all Pi** exits each eligible Pi process and resumes its recorded session with `pi --session`.
-- Provides an overlay TUI with a summary of completed, skipped, and failed operations.
+- Provides a session-modal popup TUI with a summary of completed, skipped, and failed operations.
 
 ## Requirements
 
-- Herdr 0.7.0 or newer
+- Herdr 0.7.4 or newer
 - The [Pi coding agent](https://github.com/badlogic/pi-mono) available on `PATH`
 - The Herdr Pi integration
 - Rust 1.85 or newer with Cargo (required to build the plugin during installation)
@@ -43,13 +43,13 @@ herdr plugin action list --plugin herdr-pi-reloader.pi-reloader
 
 ## Usage
 
-Open the overlay from the command line:
+Open the popup from the command line:
 
 ```sh
 herdr plugin action invoke herdr-pi-reloader.pi-reloader.open
 ```
 
-Inside the overlay:
+Inside the popup:
 
 - `j` / `Down` — move down
 - `k` / `Up` — move up
@@ -87,7 +87,7 @@ herdr plugin install anrunt/herdr-pi-reloader
 To install a reproducible release instead, pin a Git tag:
 
 ```sh
-herdr plugin install anrunt/herdr-pi-reloader --ref v0.1.0
+herdr plugin install anrunt/herdr-pi-reloader --ref v0.1.2
 ```
 
 ## Uninstalling

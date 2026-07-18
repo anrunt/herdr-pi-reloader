@@ -1,8 +1,8 @@
 id = "herdr-pi-reloader.pi-reloader"
 name = "Herdr Pi Reloader"
-version = "0.1.1"
-min_herdr_version = "0.7.0"
-description = "Reload or restart idle Pi agent sessions from a Herdr overlay"
+version = "0.1.2"
+min_herdr_version = "0.7.4"
+description = "Reload or restart idle Pi agent sessions from a Herdr popup"
 platforms = ["linux", "macos"]
 
 [[build]]
@@ -12,10 +12,10 @@ command = ["cargo", "build", "--release", "--locked"]
 id = "open"
 title = "Open Pi Reloader"
 contexts = ["workspace"]
-command = ["sh", "-lc", "exec \"${HERDR_BIN_PATH:-herdr}\" plugin pane open --plugin \"${HERDR_PLUGIN_ID:-herdr-pi-reloader.pi-reloader}\" --entrypoint tui --placement overlay --focus"]
+command = ["sh", "-lc", "exec \"${HERDR_BIN_PATH:-herdr}\" plugin pane open --plugin \"${HERDR_PLUGIN_ID:-herdr-pi-reloader.pi-reloader}\" --entrypoint tui --focus"]
 
 [[panes]]
 id = "tui"
 title = "Pi Reloader"
-placement = "overlay"
+placement = "popup"
 command = ["./target/release/herdr-pi-reloader", "tui"]
